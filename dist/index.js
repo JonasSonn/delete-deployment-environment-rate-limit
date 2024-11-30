@@ -42,6 +42,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 function listDeployments(client, { owner, repo, environment, ref = '' }, page = 0) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Getting list of deployments in environment ${environment}`);
@@ -63,7 +66,7 @@ function listDeployments(client, { owner, repo, environment, ref = '' }, page = 
         return deploymentRefs;
     });
 }
-function setDeploymentInactive(client, { owner, repo, deploymentId }) {
+function setDeploymentInactive(client, { owner, repo, deploymentId }, delay) {
     return __awaiter(this, void 0, void 0, function* () {
         yield client.request('POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
             owner,
@@ -71,15 +74,21 @@ function setDeploymentInactive(client, { owner, repo, deploymentId }) {
             deployment_id: deploymentId,
             state: 'inactive',
         });
+        if (delay > 0) {
+            yield sleep(delay);
+        }
     });
 }
-function deleteDeploymentById(client, { owner, repo, deploymentId }) {
+function deleteDeploymentById(client, { owner, repo, deploymentId }, delay) {
     return __awaiter(this, void 0, void 0, function* () {
         yield client.request('DELETE /repos/{owner}/{repo}/deployments/{deployment_id}', {
             owner,
             repo,
             deployment_id: deploymentId,
         });
+        if (delay > 0) {
+            yield sleep(delay);
+        }
     });
 }
 function deleteTheEnvironment(client, environment, { owner, repo }) {
@@ -124,6 +133,7 @@ function main() {
             required: false,
         });
         const ref = core.getInput('ref', { required: false });
+        const delay = parseInt(core.getInput('delay', { required: false }) || '0', 10);
         core.debug(`Starting Deployment Deletion action`);
         const client = github.getOctokit(token, {
             throttle: {
@@ -174,10 +184,14 @@ function main() {
                 deploymentIds = deploymentRefs.map((deployment) => deployment.deploymentId);
             }
             core.info(deactivateDeploymentMessage);
-            yield Promise.all(deploymentIds.map((deploymentId) => setDeploymentInactive(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
+            for (const deploymentId of deploymentIds) {
+                yield setDeploymentInactive(client, Object.assign(Object.assign({}, context.repo), { deploymentId }), delay);
+            }
             if (deleteDeployment) {
                 core.info(deleteDeploymentMessage);
-                yield Promise.all(deploymentIds.map((deploymentId) => deleteDeploymentById(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
+                for (const deploymentId of deploymentIds) {
+                    yield deleteDeploymentById(client, Object.assign(Object.assign({}, context.repo), { deploymentId }), delay);
+                }
             }
             if (deleteEnvironment) {
                 yield deleteTheEnvironment(client, environment, context.repo);

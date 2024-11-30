@@ -20,6 +20,10 @@ inputs:
   onlyDeactivateDeployments:
     description: Only inactive deployments, keep the environment and deployments. Defaults to false
     required: false
+  delay:
+    description: Delay in milliseconds between API calls to avoid rate limiting. Defaults to 0
+    required: false
+    default: '0'
 runs:
   using: node20
   main: 'dist/index.js'
