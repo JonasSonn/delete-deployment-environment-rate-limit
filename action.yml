@@ -1,6 +1,6 @@
-name: 'Delete Deployment Environment'
-description: 'Delete the entire environment and deployments for the branch the action is running on'
-author: "strumwolf"
+name: 'Delete Deployment Environment - With rate limiting handling'
+description: 'Delete the entire environment and deployments for the branch the action is running on. Based on strumwolf/delete-deployment-environment. We added rate limiting handling based on a comment from Aetherinox'
+author: "jonassonn"
 branding:
   icon: briefcase
   color: gray-dark
